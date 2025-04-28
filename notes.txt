@@ -1,0 +1,47 @@
+'''
+
+This txt file contains personal notes on the project, 
+mainly for recalling in the future some aspects or script with who I am not strongly familiar
+
+'''
+
+Let's use a concrete example of building a credit score classification system (similar to your current project):
+
+1. **Clear requirements**: Define exactly what the model needs to predict (credit risk levels), what data you'll use, and performance targets (e.g., "We need 85% accuracy predicting default risk using customer financial history").
+
+2. **Planning**: Sketch the pipeline before coding - data preprocessing, feature selection, model architecture, evaluation metrics. Example: "I'll use StandardScaler for numeric features, OneHotEncoder for categoricals, and compare Random Forest vs XGBoost."
+
+3. **Version control**: Create a structured repo with separate branches for features: `git checkout -b feature/data-preprocessing` for data cleaning work, then commit logically: "Add outlier detection for income field."
+
+4. **Time blocks**: "I'll spend 9-11am focused on feature engineering without checking email, then take a 15-minute break before reviewing results."
+
+5. **Testing alongside development**: Write unit tests for your preprocessing functions before moving to model training. Example: "Test that missing values are properly handled in the age column."
+
+6. **Automation**: Create a script to automatically regenerate visualizations when data changes: `python update_visualizations.py --data-path ./processed_data.csv`
+
+7. **Code reviews**: Schedule regular reviews of critical components like the feature selection logic or model evaluation code to catch bugs early.
+
+8. **Documentation**: Add docstrings and comments as you code explaining why you chose specific hyperparameters or preprocessing steps.
+
+9. **Limit context switching**: Complete the data preprocessing module entirely before moving to model training, rather than jumping between tasks.
+
+10. **End-of-day planning**: "Tomorrow I'll focus on implementing cross-validation and hyperparameter tuning for the Random Forest model."
+
+
+
+
+
+
+In Python, you normally include an __init__.py file in a folder so that the interpreter—and your tools—treat it as a package. 
+Historically, that file was the only way to signal “this is a package,” and it still gives you a spot to run any package-wide setup 
+(for example, exposing certain submodules or defining __all__). Since Python 3.3 you can technically omit it thanks to implicit 
+namespace packages (PEP 420), but many linters, test runners and IDEs still expect it, and older environments won’t recognize
+your code as a package without it.
+
+If creating an __init__.py in every new subdirectory feels tedious, you can automate it. 
+In VS Code you might build a simple folder-and-file snippet or install a template extension so both appear with a single command. 
+More universally, a Makefile or a shell script using find … -exec touch {}/__init__.py \; will walk your source tree and add any missing files. 
+For project kick-offs, cookiecutter (or your own “startproject” template) can scaffold all folders with their __init__.py in place, ready to go.
+
+As a rule of thumb, keep each __init__.py empty unless you have actual initialization logic. 
+That way your packages stay explicit and play nicely with the widest range of tooling, avoiding surprise import errors down the road.
