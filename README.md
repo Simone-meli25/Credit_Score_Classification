@@ -46,10 +46,20 @@ A supervised machine learning pipeline for credit score analysis that uses advan
 
 
 ### In Progress / To Do
+
+Simone's work in progress parts:
 - Missing value handling with advanced imputation techniques (mainly KNN)
 - Outliers Handling
 - Correlation Analysis and eventual Features selection
 - Categorical Features encoding
-- Features Scaling (optional depending on the chosen model to train)
-- Models training
-- Models evaluation
+
+Remaining parts that can be done using "dummy version of dataset":
+- Checking distribution of the target feature (Credit Score)
+- Address Class Imbalance for the target feature (Credit Score)
+- Data splitting
+  - Checking the Distribution of the target variable in the different sets
+- Feature Scaling (optional)
+- Validation Set
+- From here you can implement all the points (from 5 on) from the link repo I sent on whatsapp in the same order
+
+
