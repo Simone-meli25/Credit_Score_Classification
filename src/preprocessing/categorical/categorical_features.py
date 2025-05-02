@@ -56,7 +56,7 @@ FUNCTIONS TO HANDLE "TYPE OF LOAN" FEATURE
 
 def visualize_top_n_categories(df, column, top_n=35):
     """
-    Visualizes the top most frequent categories for the column.
+    Visualizes the top most frequent categories for the column, including missing values as a category.
     
     Args:
         df (pd.DataFrame): The dataframe containing the data
@@ -66,19 +66,22 @@ def visualize_top_n_categories(df, column, top_n=35):
     Returns:
         pd.Series: The top categories with their frequencies
     """
-    # Count occurrences of each category for the column
-    categories_counts = df[column].value_counts()
+    # Count occurrences of each category for the column INCLUDING missing values
+    categories_counts = df[column].value_counts(dropna=False)
     
     # Calculate percentages
     total_records = len(df)
     categories_percentages = categories_counts / total_records * 100
     
-    # Create a DataFrame with counts and percentages
+    # Create a DataFrame with counts and percentages (instead of dictionary since we have thousands of categories)
     categories_stats = pd.DataFrame({
         'Count': categories_counts,
         'Percentage': categories_percentages
     }).reset_index()
     categories_stats.columns = [column, 'Count', 'Percentage']
+    
+    # Replace NaN with "Missing" in the category names
+    categories_stats[column] = categories_stats[column].fillna('Missing')
     
     # Get the top N categories
     top_categories = categories_stats.head(top_n)
@@ -99,11 +102,16 @@ def visualize_top_n_categories(df, column, top_n=35):
     cumulative_percentage = top_categories['Percentage'].sum()
     print(f"\nThe top {top_n} categories cover {cumulative_percentage:.2f}% of all records")
     
-    # Print info about missing values
-    missing_count = df[column].isna().sum()
-    missing_pct = missing_count / total_records * 100
-    print(f"Missing values: {missing_count:,d} ({missing_pct:.2f}%)")
-    
+    '''
+    # No need for separate missing values info as it's now included in the categories
+    # but we can highlight it explicitly if it's in the top categories
+    if 'Missing' in top_categories[column].values:
+        missing_row = top_categories[top_categories[column] == 'Missing']
+        if not missing_row.empty:
+            missing_count = missing_row['Count'].values[0]
+            missing_pct = missing_row['Percentage'].values[0]
+            print(f"\nNote: Missing values ({missing_count:,d} records, {missing_pct:.2f}%) are included as a category.")
+    '''
 
 
 def get_unique_values_and_counts(df, column, split_pattern=r'\s*(?:,|and)\s*'):
@@ -162,9 +170,9 @@ def transform_to_binary_features(df, column, unique_values, feature_name = 'Loan
         # Create a clean column name
         col_name = suffix + re.sub(r'[ ,&-]+', '_', unique_value)
 
-        # Handle missing values by filling NaN with empty strings before checking (this part could be not necessary if we handle missing values before)
+        # Create a binary column for the unique value
         df_copy[col_name] = (
-            df_copy[column].fillna('').str.contains(re.escape(unique_value), case=True, regex=True).astype(int)
+            df_copy[column].str.contains(re.escape(unique_value), case=True, regex=True).astype(int)
         )
         
     return df_copy

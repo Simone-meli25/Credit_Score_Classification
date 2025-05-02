@@ -89,11 +89,31 @@ def impute_missing_values_for_categorical_features(df, categorical_columns, meth
 
 
 
-
-
-
-
-
 '''
 MISSING VALUES FOR NUMERICAL FEATURES
 '''
+
+def analyze_missing_values(df):
+    """
+    Analyze missing values in the dataset.
+    
+    Args:
+        df (pd.DataFrame): Input dataframe
+        
+    Returns:
+        pd.DataFrame: DataFrame with missing value statistics
+    """
+    # Calculate missing values count and percentage
+    missing = pd.DataFrame({
+        'Missing Count': df.isnull().sum(),
+        'Missing Percentage': (df.isnull().sum() / len(df) * 100).round(2)
+    }).sort_values('Missing Percentage', ascending=False)
+    
+    # Add data types
+    missing['Data Type'] = [df[col].dtype for col in missing.index]
+    
+    # Only show columns with missing values
+    missing = missing[missing['Missing Count'] > 0]
+    
+    print(f"Total features with missing values: {len(missing)}")
+    return missing
