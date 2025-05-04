@@ -1,0 +1,76 @@
+# config.yaml
+
+preprocessing:
+
+  outliers:
+
+    strategies:
+      - none
+      - clip
+      - remove
+    thresholds:
+      - 2.0
+      - 3.0
+      - 4.0
+
+  encoding:
+
+    features:
+
+      Month:
+        strategy: ordinal
+        params:
+          order_map:
+            January: 1
+            February: 2
+            March: 3
+            April: 4
+            May: 5
+            June: 6
+            July: 7
+            August: 8
+            September: 9
+            October: 10
+            November: 11
+            December: 12
+            Unknown: 0
+      
+      City:
+        strategy: one-hot
+      
+      Street:
+        strategy: frequency
+      
+      Occupation:
+        strategy: target
+        alternatives:
+          - frequency
+      
+      Credit_Mix:
+        strategy: ordinal
+        params:
+          order_map:
+            Bad: 1
+            Standard: 2
+            Good: 3
+            _: 0
+            Unknown: 0
+      
+      Payment_of_Min_Amount:
+        strategy: one-hot
+        alternatives:
+          - ordinal
+
+
+models:
+  random_forest:
+    n_estimators:
+      - 100
+      - 200
+      - 300
+    max_depth:
+      - null
+      - 10
+      - 20
+      - 30
+    

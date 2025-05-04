@@ -3,6 +3,8 @@
 MISSING VALUES FOR CATEGORICAL FEATURES
 '''
 import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 def visualize_proportion_of_unique_categories(df, columns):
     """
@@ -85,6 +87,37 @@ def impute_missing_values_for_categorical_features(df, categorical_columns, meth
     
     return df_copy
 
+
+def plot_distribution_comparison_for_categorical(original_df, imputed_df, columns):
+    """
+    Plot the distribution of original and imputed values for a column.
+    
+    Args:
+        original_df (pd.DataFrame): Original dataframe
+        imputed_df (pd.DataFrame): Dataframe with imputed values
+        columns (list): List of column names to plot
+    """
+
+    for column in columns:
+    
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5))
+        
+        # Plot original distribution
+        sns.histplot(original_df[column], kde=True, ax=ax1, color='blue', alpha=0.7)
+        ax1.set_title(f"Original Distribution\n{column}")
+        ax1.set_xlabel(column)
+        ax1.set_ylabel("Count")
+        
+        # Plot imputed distribution
+        title = f"New Category Unknown"
+        
+        sns.histplot(imputed_df[column], kde=True, ax=ax2, color='green', alpha=0.7)
+        ax2.set_title(title)
+        ax2.set_xlabel(column)
+        ax2.set_ylabel("Count")
+        
+        plt.tight_layout()
+        plt.show()
 
 
 

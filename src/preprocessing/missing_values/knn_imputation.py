@@ -234,26 +234,3 @@ def apply_and_evaluate_knn_imputation(df, columns, holdout_fraction=0.2, k=3):
 
     return df_imputed, results_dict
 
-
-
-        
-def apply_and_evaluate_knn_for_all_numeric_columns(df, missing_cols, holdout_fraction=0.2, k=3):
-    """
-    Evaluate KNN imputation method for all numeric columns with missing values.
-    
-    Args:
-        df (pd.DataFrame): Input dataframe
-        holdout_fraction (float): Fraction of data to hold out for evaluation
-        
-    Returns:
-        dict: Best imputation method for each column
-    """
-    df_copy = df.copy()
-                
-    print(f"Evaluating KNN imputation method for {len(missing_cols)} numeric columns")
-    
-    df_imputed, results_for_column = apply_and_evaluate_knn_imputation(df_copy, missing_cols, holdout_fraction, k)
-
-    return df_imputed, results_for_column
-
-        
