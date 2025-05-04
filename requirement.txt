@@ -6,3 +6,6 @@ seaborn
 missingno
 pytest
 imblearn
+xgboost
+joblib
+multiprocessing
