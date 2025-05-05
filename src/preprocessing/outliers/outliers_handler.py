@@ -12,7 +12,6 @@ class OutlierHandler(BaseEstimator, TransformerMixin):
         Method to handle outliers:
         - 'none': Keep all data as is
         - 'clip': Clip values beyond the z-score threshold
-        - 'remove': Remove rows containing outlier values
     
     z_thresh : float, default=3.0
         Z-score threshold to identify outliers. Values with absolute 
@@ -51,20 +50,28 @@ class OutlierHandler(BaseEstimator, TransformerMixin):
             raise TypeError("X must be a pandas DataFrame")
             
         # Validate strategy
-        valid_strategies = ['none', 'clip', 'remove']
+        valid_strategies = ['none', 'clip']
         if self.strategy not in valid_strategies:
             raise ValueError(f"strategy must be one of {valid_strategies}")
+        
+        # Only select numeric columns for outlier handling
+        numeric_cols = X.select_dtypes(include=['number']).columns
+        self.numeric_cols_ = numeric_cols  # Store for later use in transform
             
         # Store column means and stds if we'll use them for clipping
         if self.strategy == 'clip':
-            self.means_ = X.mean()
-            self.stds_ = X.std()
+            if len(numeric_cols) > 0:
+                self.means_ = X[numeric_cols].mean()
+                self.stds_ = X[numeric_cols].std()
+                
+                # Check for constant columns to avoid division by zero
+                zero_std_cols = self.stds_[self.stds_ == 0].index.tolist()
+                if zero_std_cols:
+                    raise ValueError(f"Found constant columns: {zero_std_cols}. "
+                                    "These columns have zero standard deviation.")
             
-            # Check for constant columns to avoid division by zero
-            zero_std_cols = self.stds_[self.stds_ == 0].index.tolist()
-            if zero_std_cols:
-                raise ValueError(f"Found constant columns: {zero_std_cols}. "
-                                "These columns have zero standard deviation.")
+            else:
+                raise ValueError("No numeric columns found for outlier handling")
                 
         return self
     
@@ -89,14 +96,17 @@ class OutlierHandler(BaseEstimator, TransformerMixin):
         # Make a copy to avoid modifying the original data
         X_transformed = X.copy()
         
-        if self.strategy == 'none':
+        # Get numeric columns (either from fit or find them now)
+        numeric_cols = getattr(self, 'numeric_cols_', X.select_dtypes(include=['number']).columns)
+        
+        if self.strategy == 'none' or len(numeric_cols) == 0:
             # Do nothing, return data as is
             return X_transformed
             
         elif self.strategy == 'clip':
             # Use stored means and stds from fit method
-            # Calculate z-scores for each value
-            z_scores = (X_transformed - self.means_) / self.stds_
+            # Calculate z-scores for each value (only for numeric columns)
+            z_scores = (X_transformed[numeric_cols] - self.means_) / self.stds_
             
             # Identify outliers
             outlier_mask = abs(z_scores) > self.z_thresh
@@ -114,14 +124,17 @@ class OutlierHandler(BaseEstimator, TransformerMixin):
                 X_transformed.loc[col_mask & (X_transformed[col] > upper_bound), col] = upper_bound
                 X_transformed.loc[col_mask & (X_transformed[col] < lower_bound), col] = lower_bound
                 
+        '''
         elif self.strategy == 'remove':
-            # Calculate z-scores for the data
-            z_scores = (X_transformed - X_transformed.mean()) / X_transformed.std()
+            # Calculate z-scores for the numeric data
+            z_scores = (X_transformed[numeric_cols] - X_transformed[numeric_cols].mean()) / X_transformed[numeric_cols].std()
             
             # Identify rows to keep (those without outliers in any column)
             rows_to_keep = (abs(z_scores) <= self.z_thresh).all(axis=1)
             
             # Keep only non-outlier rows
             X_transformed = X_transformed.loc[rows_to_keep]
+
+        '''
             
         return X_transformed

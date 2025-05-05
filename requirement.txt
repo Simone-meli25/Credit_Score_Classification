@@ -6,3 +6,5 @@ seaborn
 missingno
 pytest
 pyyaml
+imbalanced-learn
+xgboost

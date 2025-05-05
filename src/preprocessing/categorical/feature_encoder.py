@@ -25,12 +25,16 @@ class FeatureEncoder(BaseEstimator, TransformerMixin):
     encoders_ : dict
         Fitted encoding transformations for each feature
     """
+
+    DEFAULT_TARGET_NAME = 'Credit_Score'
+
     def __init__(self, encoding_map, encoding_params=None, hyperparams=None):
         self.encoding_map = encoding_map
-        self.encoding_params = encoding_params or {}
-        self.hyperparams = hyperparams or {} # will be modified during hyperparameter tuning by sklearn's parameter setting mechanism to test different encoding strategies
+        self.encoding_params = encoding_params 
+        self.hyperparams = hyperparams 
         
-    def fit(self, X, y=None):
+        
+    def fit(self, X, y):
         """
         Learn the required statistics for each encoding strategy.
         
@@ -38,8 +42,8 @@ class FeatureEncoder(BaseEstimator, TransformerMixin):
         -----------
         X : pandas DataFrame
             The input features to fit
-        y : array-like, default=None
-            Target values for target encoding
+        y : array-like,
+            Target values necessary for target encoding method
             
         Returns:
         --------
@@ -52,6 +56,10 @@ class FeatureEncoder(BaseEstimator, TransformerMixin):
         # Initialize storage for fitted encoders/transformations
         self.encoders_ = {}
         
+        # Create internal copies with defaults if needed
+        _encoding_params = {} if self.encoding_params is None else self.encoding_params
+        _hyperparams = {} if self.hyperparams is None else self.hyperparams
+        
         # Process each feature in the encoding map
         for feature, strategy_info in self.encoding_map.items():
             if feature not in X.columns:
@@ -62,13 +70,13 @@ class FeatureEncoder(BaseEstimator, TransformerMixin):
                 # This feature has multiple strategy options
                 default_strategy = strategy_info[0]
                 # Check if a specific strategy was selected via hyperparams
-                strategy = self.hyperparams.get(feature, default_strategy)
+                strategy = _hyperparams.get(feature, default_strategy)
             else:
                 # This feature has a fixed strategy
                 strategy = strategy_info
                 
             # Get feature-specific parameters if any
-            params = self.encoding_params.get(feature, {})
+            params = _encoding_params.get(feature, {})
             
             # Fit the appropriate encoder based on strategy
             if strategy == 'ordinal':
@@ -87,13 +95,6 @@ class FeatureEncoder(BaseEstimator, TransformerMixin):
             elif strategy == 'frequency':
                 # For frequency encoding, compute value counts
                 self.encoders_[feature] = X[feature].value_counts(normalize=True).to_dict()
-                
-            elif strategy == 'target':
-                # For target encoding, compute mean target value per category
-                if y is None:
-                    raise ValueError("Target values (y) are required for target encoding")
-                self.encoders_[feature] = X.groupby(feature)[y.name].mean().to_dict() if hasattr(y, 'name') else \
-                                         pd.Series(y).groupby(X[feature]).mean().to_dict()
                 
             elif strategy == 'binary':
                 # For binary encoding, create a simple 0/1 mapping
@@ -162,13 +163,6 @@ class FeatureEncoder(BaseEstimator, TransformerMixin):
                 # Handle unseen categories with a default value (0)
                 X_transformed[feature] = X[feature].map(encoder).fillna(0)
                 
-            elif strategy == 'target':
-                # Map values to target means
-                encoder = self.encoders_[feature]
-                # Handle unseen categories with global mean
-                global_mean = sum(encoder.values()) / len(encoder) if encoder else 0
-                X_transformed[feature] = X[feature].map(encoder).fillna(global_mean)
-                
             elif strategy == 'binary':
                 # Map to binary values
                 encoder = self.encoders_[feature]
@@ -179,20 +173,23 @@ class FeatureEncoder(BaseEstimator, TransformerMixin):
                 
         return X_transformed
     
-    def set_hyperparams(self, hyperparams):
-        """
-        Update the hyperparameters for features with multiple encoding options.
+
+    def set_params(self, **params):
+        """Set parameters for this estimator.
         
-        Parameters:
-        -----------
-        hyperparams : dict
-            Dictionary specifying which strategy to use for features with multiple options.
-            Format: {'feature_name': 'chosen_strategy'}
-            
-        Returns:
-        --------
-        self : object
-            Returns self
+        This method is necessary for scikit-learn's hyperparameter tuning.
         """
-        self.hyperparams = hyperparams
+        for key, value in params.items():
+            if '__' in key:
+                # Handle nested parameters like 'hyperparams__Occupation'
+                param, sub_param = key.split('__', 1)
+                if param == 'hyperparams':
+                    # Initialize hyperparams if needed
+                    if not hasattr(self, 'hyperparams') or self.hyperparams is None:
+                        self.hyperparams = {}
+                    # Set the specific hyperparameter
+                    self.hyperparams[sub_param] = value
+            else:
+                # Handle direct parameters
+                setattr(self, key, value)
         return self

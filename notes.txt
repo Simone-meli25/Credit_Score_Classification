@@ -45,3 +45,42 @@ For project kick-offs, cookiecutter (or your own “startproject” template) ca
 
 As a rule of thumb, keep each __init__.py empty unless you have actual initialization logic. 
 That way your packages stay explicit and play nicely with the widest range of tooling, avoiding surprise import errors down the road.
+
+
+
+
+
+-------------------IDEA STRUTTURA FINALE -------------------------------------------------
+
+### Dataset 1: Dopo pulizia iniziale
+- Dati con valori mancanti gestiti
+- No encoding, no outlier handling
+- Questo è il tuo "dataset di partenza" per la pipeline finale
+
+### Dataset 2: Per analisi esplorativa
+- Applica encoding con strategie default
+- Applica outlier handling con parametri default
+- Usalo per:
+  - Analisi di correlazione
+  - Feature selection
+  - Identificazione di pattern
+  - Decisioni su quali features mantenere
+
+### Processo finale
+1. Parti dal Dataset 1
+2. Crea una pipeline completa che include:
+   - Encoding (con iperparametri da ottimizzare)
+   - Outlier handling (con iperparametri da ottimizzare)
+   - Feature selection (basata sulle decisioni prese dall'analisi sul Dataset 2)
+   - Gestione dello sbilanciamento delle classi
+   - Modello di classificazione
+
+3. Esegui RandomizedSearchCV su questa pipeline
+
+Questo approccio ha diversi vantaggi:
+- Eviti data leakage (non prendi decisioni basate su informazioni del test set)
+- Hai una chiara separazione tra esplorazione e modellazione
+- La pipeline finale è pulita e ripetibile
+- Le decisioni sulle features sono prese in modo informato prima dell'ottimizzazione
+
+In pratica, stai facendo un'analisi esplorativa su un dataset pre-processato con parametri default, ma poi costruisci la pipeline finale partendo dai dati grezzi (puliti) e lasci che sia la pipeline a eseguire tutte le trasformazioni durante l'ottimizzazione.
