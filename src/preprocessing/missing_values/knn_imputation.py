@@ -148,7 +148,7 @@ def plot_distribution_comparison(original_df, imputed_df, column, rmse=None, dis
     plt.show()
 
 
-def apply_and_evaluate_knn_imputation(df, columns, holdout_fraction=0.2, k=3):
+def apply_and_evaluate_knn_imputation(df, columns, holdout_fraction=0.2, k=3, plot=False):
     """
     Evaluate knn imputation method for specific columns.
     
@@ -157,6 +157,7 @@ def apply_and_evaluate_knn_imputation(df, columns, holdout_fraction=0.2, k=3):
         columns (list): List of columns to evaluate KNN imputation method for
         holdout_fraction (float): Fraction of data to hold out for evaluation
         k (int): Number of neighbors for KNN
+        plot (bool): Whether to plot the distribution comparison
 
     Returns:
         tuple: (imputed_df, results_dict) - DataFrame with all imputed values and dictionary of results per column
@@ -168,7 +169,6 @@ def apply_and_evaluate_knn_imputation(df, columns, holdout_fraction=0.2, k=3):
     df_imputed = df_copy.copy()
 
     for column in columns:
-        print(f"\nEvaluating KNN imputation (k = {k}) for column '{column}'\n")
         
         # Create holdout set
         holdout_mask, holdout_values = create_holdout_mask(df_copy, column, holdout_fraction)
@@ -216,14 +216,15 @@ def apply_and_evaluate_knn_imputation(df, columns, holdout_fraction=0.2, k=3):
                 'combined_score': rmse * (1 + dist_score/100)  # Weighted combined score
             }
             
-            # Plot distribution comparison
-            plot_distribution_comparison(
-                df_copy, 
-                column_imputed_df, 
-                column,
-                rmse=rmse,
-                dist_score=dist_score
-            )
+            if plot:
+                # Plot distribution comparison
+                plot_distribution_comparison(
+                    df_copy, 
+                    column_imputed_df, 
+                    column,
+                    rmse=rmse,
+                    dist_score=dist_score
+                )
                         
         except Exception as e:
             print(f"    Error with KNN imputation for {column}: {str(e)}")
@@ -234,26 +235,3 @@ def apply_and_evaluate_knn_imputation(df, columns, holdout_fraction=0.2, k=3):
 
     return df_imputed, results_dict
 
-
-
-        
-def apply_and_evaluate_knn_for_all_numeric_columns(df, missing_cols, holdout_fraction=0.2, k=3):
-    """
-    Evaluate KNN imputation method for all numeric columns with missing values.
-    
-    Args:
-        df (pd.DataFrame): Input dataframe
-        holdout_fraction (float): Fraction of data to hold out for evaluation
-        
-    Returns:
-        dict: Best imputation method for each column
-    """
-    df_copy = df.copy()
-                
-    print(f"Evaluating KNN imputation method for {len(missing_cols)} numeric columns")
-    
-    df_imputed, results_for_column = apply_and_evaluate_knn_imputation(df_copy, missing_cols, holdout_fraction, k)
-
-    return df_imputed, results_for_column
-
-        
