@@ -52,8 +52,48 @@ def get_categorical_features(df):
     return df.select_dtypes(include=['object', 'category']).columns.tolist()
 
 
+def load_processed_data(file_name: str = 'preprocessed_dataset_first_10k_rows.csv') -> pd.DataFrame:
+    """
+    Load the processed credit score dataset.
+
+    Args:
+        file_name (str, optional): Name of the CSV file in data/processed. Defaults to 'preprocessed_dataset_first_10k_rows.csv'.
+
+    Returns:
+        pd.DataFrame: The loaded dataframe.
+    """
+    root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    file_path = os.path.join(root_dir, 'data', 'processed', file_name)
+
+    if not os.path.exists(file_path):
+        raise FileNotFoundError(f"Processed data file not found at {file_path}")
+
+    print(f"Loading processed data from {file_path}")
+    df = pd.read_csv(file_path)
+    print(f"Loaded processed dataset with {df.shape[0]} rows and {df.shape[1]} columns")
+    return df
 
 
+def load_processed_data_full(file_name: str = 'preprocessed_full_dataset.csv') -> pd.DataFrame:
+    """
+    Load the processed credit score dataset.
+
+    Args:
+        file_name (str, optional): Name of the CSV file in data/processed. Defaults to 'preprocessed_full_dataset.csv'.
+
+    Returns:
+        pd.DataFrame: The loaded dataframe.
+    """
+    root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    file_path = os.path.join(root_dir, 'data', 'processed', file_name)
+
+    if not os.path.exists(file_path):
+        raise FileNotFoundError(f"Processed data file not found at {file_path}")
+
+    print(f"Loading processed data from {file_path}")
+    df = pd.read_csv(file_path)
+    print(f"Loaded processed dataset with {df.shape[0]} rows and {df.shape[1]} columns")
+    return df
 
 
 
