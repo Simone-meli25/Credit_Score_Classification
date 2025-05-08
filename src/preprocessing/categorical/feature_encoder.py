@@ -63,7 +63,8 @@ class FeatureEncoder(BaseEstimator, TransformerMixin):
         # Process each feature in the encoding map
         for feature, strategy_info in self.encoding_map.items():
             if feature not in X.columns:
-                raise ValueError(f"Feature {feature} present in encoding_map, but not found in DataFrame columns")
+                print(f"Warning: Feature {feature} present in encoding_map, but not found in DataFrame columns")
+                continue
 
             # Determine the strategy to use
             if isinstance(strategy_info, tuple):
@@ -129,8 +130,9 @@ class FeatureEncoder(BaseEstimator, TransformerMixin):
         
         # Process each feature in the encoding map
         for feature, strategy_info in self.encoding_map.items():
-            if feature not in X.columns or feature not in self.encoders_:
-                raise ValueError(f"Feature {feature} from encoding_map not found in DataFrame columns or encoders")
+            if feature not in self.encoders_:
+                print(f"Warning: Feature {feature} from encoding_map not found in encoders")
+                continue
                 
             # Determine the strategy to use
             if isinstance(strategy_info, tuple):

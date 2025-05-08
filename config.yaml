@@ -30,8 +30,8 @@ preprocessing:
             November: 11
             December: 12
             Unknown: 0
-      #  City:
-      #    strategy: one-hot      
+      City:
+        strategy: one-hot      
       Street:
         strategy: frequency      
       Occupation:

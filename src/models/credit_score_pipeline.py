@@ -40,10 +40,6 @@ class CreditScorePipeline:
         self.random_state = random_state
         self.config = self._load_config()
         
-        # Initialize pipeline components
-        self.encoding_map, self.encoding_params = self._create_encoding_map()
-        self.param_grid = self._create_param_grid()
-        
         # Initialize empty pipeline attributes
         self.X_train = None
         self.X_val = None
@@ -53,6 +49,11 @@ class CreditScorePipeline:
         self.y_test = None
         self.best_model = None
         self.feature_importances = None
+        
+        # Initialize empty encoding maps
+        self.encoding_map = None
+        self.encoding_params = None
+        self.param_grid = None
 
     def _load_config(self):
         """Load configuration from YAML file."""
@@ -60,7 +61,7 @@ class CreditScorePipeline:
             return yaml.safe_load(file)
         
 
-    def split_data(self, X, y, test_size=0.2, val_size=0.2):
+    def split_data(self, X, y, test_size=0.2, val_size=0.2, custom_split=False, customer_id_col='Customer_ID'):
         """
         Split the data into train, validation, and test sets.
         
@@ -77,8 +78,25 @@ class CreditScorePipeline:
             
         val_size : float, default=0.2
             Proportion of remaining data to use as validation set
-        """        
+            
+        custom_split : bool, default=False
+            If True, ensures all records from the same customer stay together
+            If False, performs random split of individual records
+            
+        customer_id_col : str, default='Customer_ID'
+            Name of the column containing customer IDs (only used if custom_split=True)
+        """
+        if custom_split:
+            self._split_by_customer(X, y, test_size, val_size, customer_id_col)
+        else:
+            self._split_random(X, y, test_size, val_size)
         
+        # Create encoding map and param grid after data split
+        self.encoding_map, self.encoding_params = self._create_encoding_map()
+        self.param_grid = self._create_param_grid()
+
+    def _split_random(self, X, y, test_size, val_size):
+        """Perform random split of individual records."""
         # First split: separate test set
         X_temp, self.X_test, y_temp, self.y_test = train_test_split(
             X, y, test_size=test_size, random_state=self.random_state, 
@@ -91,18 +109,67 @@ class CreditScorePipeline:
             stratify=y_temp
         )
         
-        print(f"Data split into train ({len(self.X_train)} samples), "
-              f"validation ({len(self.X_val)} samples), and "
-              f"test ({len(self.X_test)} samples) sets.")
-    
+        print(f"Random split into train ({len(self.X_train)} records), "
+              f"validation ({len(self.X_val)} records), and "
+              f"test ({len(self.X_test)} records) sets.")
+
+    def _split_by_customer(self, X, y, test_size, val_size, customer_id_col):
+        """Split data ensuring all records from the same customer stay together."""
+        # Get unique customer IDs
+        unique_customers = X[customer_id_col].unique()
+        
+        # Split customer IDs into train, validation, and test sets
+        customers_temp, test_customers = train_test_split(
+            unique_customers, 
+            test_size=test_size, 
+            random_state=self.random_state
+        )
+        
+        train_customers, val_customers = train_test_split(
+            customers_temp, 
+            test_size=val_size, 
+            random_state=self.random_state
+        )
+        
+        # Create masks for each set
+        train_mask = X[customer_id_col].isin(train_customers)
+        val_mask = X[customer_id_col].isin(val_customers)
+        test_mask = X[customer_id_col].isin(test_customers)
+        
+        # Split the data using the masks
+        self.X_train = X[train_mask]
+        self.X_val = X[val_mask]
+        self.X_test = X[test_mask]
+        
+        self.y_train = y[train_mask]
+        self.y_val = y[val_mask]
+        self.y_test = y[test_mask]
+
+        # Drop the customer_id column from the train, validation and test sets
+        self.X_train = self.X_train.drop(columns=[customer_id_col])
+        self.X_val = self.X_val.drop(columns=[customer_id_col])
+        self.X_test = self.X_test.drop(columns=[customer_id_col])
+        
+        print(f"Feature-based split using {customer_id_col} (then dropped) into train ({len(train_customers)} customers, {len(self.X_train)} records), "
+              f"validation ({len(val_customers)} customers, {len(self.X_val)} records), and "
+              f"test ({len(test_customers)} customers, {len(self.X_test)} records) sets.")
+
     def _create_encoding_map(self):
         """Create encoding map and params from config."""
         encoding_map = {}
         encoding_params = {}
         
+        # Get features that are actually present in the data
+        available_features = set(self.X_train.columns)
+        
+        # settings contains the feature's strategy, alternatives (in case of more than one strategy), 
+        # and params (in case of ordinal strategy)
         for feature, settings in self.config['preprocessing']['encoding']['features'].items():
-            # settings contains the feature'strategy, alternatives (in case of more than one strategy), 
-            # and params (in case of ordinal strategy)
+            # Skip features that are not in the data
+            if feature not in available_features:
+                print(f"Warning: Feature '{feature}' from config is not present in the data. Skipping.")
+                continue
+                
             strategy = settings['strategy']
             
             # Check if feature has alternative encoding strategies
@@ -344,7 +411,8 @@ class CreditScorePipeline:
             print("Continuing without feature importance plot.")
             return None
     
-    def run_full_pipeline(self, X, y, test_size=0.2, val_size=0.2, n_iter=20, cv=5, scoring='accuracy'):
+    def run_full_pipeline(self, X, y, test_size=0.2, val_size=0.2, n_iter=20, cv=5, 
+                         scoring='accuracy', custom_split=False, customer_id_col='Customer_ID'):
         """
         Run the complete pipeline from data splitting to evaluation.
         
@@ -357,10 +425,10 @@ class CreditScorePipeline:
             Target values
             
         test_size : float, default=0.2
-            Proportion of data to use as test set
+            Proportion of data/customers to use for test set
             
         val_size : float, default=0.2
-            Proportion of remaining data to use as validation set
+            Proportion of remaining data/customers to use for validation set
             
         n_iter : int, default=20
             Number of parameter settings sampled
@@ -368,12 +436,19 @@ class CreditScorePipeline:
         cv : int, default=5
             Number of cross-validation folds
             
-        Returns:
-        --------
-        dict : Dictionary with evaluation metrics
+        scoring : str, default='accuracy'
+            Metric to optimize during tuning
+            
+        custom_split : bool, default=False
+            If True, ensures all records from the same customer stay together
+            If False, performs random split of individual records
+            
+        customer_id_col : str, default='Customer_ID'
+            Name of the column containing customer IDs (only used if custom_split=True)
         """
         # Step 1: Split data
-        self.split_data(X, y, test_size=test_size, val_size=val_size)
+        self.split_data(X, y, test_size=test_size, val_size=val_size, 
+                       custom_split=custom_split, customer_id_col=customer_id_col)
         
         # Step 2: Tune hyperparameters
         self.tune_hyperparameters(n_iter=n_iter, cv=cv, scoring=scoring)

@@ -166,7 +166,7 @@ def convert_to_numeric(df, columns):
     for col in columns:
         if col in df_copy.columns:
             # Convert to numeric, coercing errors to NaN
-            df_copy[col] = pd.to_numeric(df_copy[col], errors='coerce')
+            df_copy[col] = pd.to_numeric(df_copy[col], errors="raise")
             print(f"Converted '{col}' to numeric")
         else:
             print(f"Column '{col}' not found in DataFrame")
