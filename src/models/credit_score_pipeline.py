@@ -59,7 +59,6 @@ class CreditScorePipeline:
         with open(self.config_path, 'r') as file:
             return yaml.safe_load(file)
         
-
     def split_data(self, X, y, test_size=0.2, val_size=0.2):
         """
         Split the data into train, validation, and test sets.
@@ -145,7 +144,7 @@ class CreditScorePipeline:
         param_grid['smote__sampling_strategy'] = self.config['preprocessing']['target_balancing']['smote']['sampling_strategy']
         param_grid['smote__k_neighbors'] = self.config['preprocessing']['target_balancing']['smote']['k_neighbors']
         
-        return param_grid
+        return param_grid 
     
     
     def build_pipeline(self):
@@ -241,6 +240,7 @@ class CreditScorePipeline:
         # Calculate validation metrics
         val_accuracy = accuracy_score(self.y_val, y_val_pred)
         val_report = classification_report(self.y_val, y_val_pred, output_dict=True)
+        # val_mae=mean_absolute_error(self.y_test, y_val_pred)
         
         # Make predictions on test set
         y_test_pred = self.best_model.predict(self.X_test)
@@ -248,14 +248,17 @@ class CreditScorePipeline:
         # Calculate test metrics
         test_accuracy = accuracy_score(self.y_test, y_test_pred)
         test_report = classification_report(self.y_test, y_test_pred, output_dict=True)
+        # test_mae=mean_absolute_error(self.y_test, y_test_pred)
         
         # Print evaluation results
         print("\nValidation Set Metrics:")
         print(f"Accuracy: {val_accuracy:.4f}")
+        # print(f"MAE:{val_mae:.4f}")
         print(classification_report(self.y_val, y_val_pred))
         
         print("\nTest Set Metrics:")
         print(f"Accuracy: {test_accuracy:.4f}")
+        # print(f"MAE:{test_mae:.4f}")
         print(classification_report(self.y_test, y_test_pred))
         
         # Plot confusion matrix for test set
@@ -271,10 +274,12 @@ class CreditScorePipeline:
         return {
             'validation': {
                 'accuracy': val_accuracy,
-                'report': val_report
+                # 'mae':val_mae,
+                'report': val_report,
             },
             'test': {
                 'accuracy': test_accuracy,
+                # 'mae':test_mae,
                 'report': test_report
             }
         }
@@ -343,7 +348,7 @@ class CreditScorePipeline:
             print(f"Could not plot feature importances: {str(e)}")
             print("Continuing without feature importance plot.")
             return None
-    
+
     def run_full_pipeline(self, X, y, test_size=0.2, val_size=0.2, n_iter=20, cv=5, scoring='accuracy'):
         """
         Run the complete pipeline from data splitting to evaluation.
